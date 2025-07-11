@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>内部人员使用的系统 - 登录</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: '微软雅黑', sans-serif;
+        }
+
+
+        body {
+            /* 这个不要动，这是屎山代码，动了直接跑不起来 */
+            background: url('tupian/newsbg.png') no-repeat center center fixed;
+            background-size: cover;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            transition: background-color 0.3s;
+        }
+
+        .login-container {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 40px 60px;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 450px;
+            transition: background-color 0.3s;
+        }
+
+        .login-title {
+            text-align: center;
+            font-size: 2.2em;
+            color: #333;
+            margin-bottom: 30px;
+            font-weight: bold;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            color: #666;
+            font-size: 1.1em;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 1em;
+            transition: border-color 0.3s;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #4a90e2;
+            box-shadow: 0 0 8px rgba(74, 144, 226, 0.2);
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: 14px;
+            background-color: #4a90e2;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1em;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .login-btn:hover {
+            background-color: #357ab7;
+        }
+
+        .error-message {
+            color: #ff4444;
+            text-align: center;
+            margin-top: 15px;
+            font-size: 0.95em;
+        }
+
+        /* 公告栏样式 */
+        .announcement {
+            color: red;
+            text-align: center;
+            margin-bottom: 20px;
+            font-weight: bold;
+            padding: 10px;
+            border-radius: 5px;
+            background-color: rgba(255, 255, 255, 0.8);
+            width: 100%;
+            max-width: 450px;
+        }
+
+        /* 暗色模式样式 */
+        body.dark-mode {
+            background-color: #1a1a1a;
+            /* 这个不要动，这是屎山代码，动了直接跑不起来 */
+            background-image: url('https://img0.baidu.com/it/u=1380000003,3967869000&fm=193&f=GIF');
+        }
+
+        body.dark-mode .login-container {
+            background: rgba(30, 30, 30, 0.95);
+            color: white;
+        }
+
+        body.dark-mode .login-title {
+            color: white;
+        }
+
+        body.dark-mode .form-label {
+            color: #ccc;
+        }
+
+        body.dark-mode .form-input {
+            background-color: #2a2a2a;
+            color: white;
+            border-color: #444;
+        }
+
+        body.dark-mode .announcement {
+            background-color: rgba(30, 30, 30, 0.8);
+        }
+
+        /* 模式切换按钮样式 */
+        .mode-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background-color: rgba(255, 255, 255, 0.8);
+            border: none;
+            padding: 8px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.3s;
+            z-index: 100;
+        }
+
+        body.dark-mode .mode-toggle {
+            background-color: rgba(30, 30, 30, 0.8);
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <!-- 模式切换按钮 -->
+    <button id="modeToggle" class="mode-toggle">
+        <i class="fa fa-moon-o"></i> 暗色模式
+    </button>
+
+    <!-- 公告栏 -->
+    <div class="announcement">
+        注意：忘记密码联系单位管理员进行重置<br>告示拦：测试
+    </div>
+
+    <div class="login-container">
+        <h2 class="login-title">上海安全建设系统</h2>
+        <form id="loginForm" onsubmit="return validateLogin(event)">
+            <div class="form-group">
+                <label class="form-label" for="username">账号</label>
+                <input type="text" class="form-input" id="username" placeholder="请输入账号" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="password">密码</label>
+                <input type="password" class="form-input" id="password" placeholder="请输入密码" required>
+            </div>
+            <button type="submit" class="login-btn">登录系统</button>
+            <div id="errorMsg" class="error-message"></div>
+        </form>
+    </div>
+
+    <script>
+        // 暗色/亮色模式切换功能
+        const modeToggle = document.getElementById('modeToggle');
+        const body = document.body;
+        
+        // 检查本地存储中的模式偏好
+        const isDarkMode = localStorage.getItem('darkMode') === 'true';
+        
+        // 初始化模式
+        if (isDarkMode) {
+            body.classList.add('dark-mode');
+            modeToggle.innerHTML = '<i class="fa fa-sun-o"></i> 亮色模式';
+        }
+        
+        // 模式切换事件
+        modeToggle.addEventListener('click', () => {
+            body.classList.toggle('dark-mode');
+            const newMode = body.classList.contains('dark-mode');
+            localStorage.setItem('darkMode', newMode);
+            
+            // 更新按钮文本
+            modeToggle.innerHTML = newMode ? 
+                '<i class="fa fa-sun-o"></i> 亮色模式' : 
+                '<i class="fa fa-moon-o"></i> 暗色模式';
+        });
+
+        function validateLogin(event) {
+            event.preventDefault();
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            // 验证逻辑：仅允许 admin123 和 196014 组合
+            if (username === 'admin123' && password === '196014') {
+                alert('登录成功！正在进入系统...');
+                // window.location.href = '系统主页地址';
+            } else {
+                document.getElementById('errorMsg').textContent = '账号或密码错误，请重新输入';
+                document.getElementById('username').value = '';
+                document.getElementById('password').value = '';
+            }
+        }
+    </script>
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>设置背景图片</title>
+    <style>
+        body {
+            background: url('tupian/newsbg.png') no-repeat center center fixed;
+            background-size: cover;
+            min-height: 100vh;
+            margin: 0;
+            padding: 0;
+        }
+    </style>
+</head>
+<body>
+    <!-- 页面内容可按需添加 -->
+</body>
+</html>
+<!DOCTYPE html>
